@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}Таблица лидеров - Minecraft Bedwars{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="hero-section text-center py-5 mb-4">
+    <h1 class="display-4 fw-bold text-warning mb-3">
+        <i class="fas fa-trophy me-3"></i>Таблица лидеров
+    </h1>
+    <p class="lead text-muted">Лучшие игроки Minecraft Bedwars</p>
+
+    {% if stats %}
+        <div class="row g-3 mt-4">
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.total_players }}</div>
+<div class="stat-label">Игроков</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-number">{{ "{:,}".format(stats.total_kills) }}</div>
+                    <div class="stat-label">Киллов</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-number">{{ "{:,}".format(stats.total_games) }}</div>
+                    <div class="stat-label">Игр</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.total_beds_broken }}</div>
+                    <div class="stat-label">Кроватей</div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Controls Section -->
+<div class="controls-section mb-4">
+    <div class="row g-3 align-items-center">
+        <!-- Search -->
+        <div class="col-md-4">
+            <form method="GET" class="search-form">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="search" 
+                           placeholder="Поиск игрока..." value="{{ search_query or '' }}">
+                    <input type="hidden" name="sort" value="{{ current_sort }}">
+                    <button class="btn btn-outline-warning" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sort Options -->
+        <div class="col-md-4">
+            <select class="form-select" id="sortSelect" onchange="changeSorting()">
+                <option value="experience" {{ 'selected' if current_sort == 'experience' }}>По опыту</option>
+                <option value="level" {{ 'selected' if current_sort == 'level' }}>По уровню</option>
+                <option value="kills" {{ 'selected' if current_sort == 'kills' }}>По киллам</option>
+                <option value="final_kills" {{ 'selected' if current_sort == 'final_kills' }}>По финальным киллам</option>
+                <option value="beds_broken" {{ 'selected' if current_sort == 'beds_broken' }}>По кроватям</option>
+                <option value="wins" {{ 'selected' if current_sort == 'wins' }}>По победам</option>
+                <option value="kd_ratio" {{ 'selected' if current_sort == 'kd_ratio' }}>По K/D</option>
+                <option value="win_rate" {{ 'selected' if current_sort == 'win_rate' }}>По % побед</option>
+            </select>
+        </div>
+
+        <!-- Export & Admin -->
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{{ url_for('export_leaderboard') }}" class="btn btn-outline-success">
+                    <i class="fas fa-download me-1"></i>Экспорт
+                </a>
+                {% if is_admin %}
+                    <a href="{{ url_for('admin') }}" class="btn btn-warning">
+                        <i class="fas fa-plus me-1"></i>Добавить
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leaderboard Table -->
+{% if players %}
+    <div class="leaderboard-container">
+        <div class="table-responsive">
+            <table class="table table-dark table-striped table-hover leaderboard-table">
+                <thead class="table-warning">
+                    <tr>
+                        <th>Место</th>
+                        <th>Игрок</th>
+                        <th>Уровень</th>
+                        <th>Опыт</th>
+                        <th>K/D</th>
+                        <th>FK/D</th>
+                        <th>Кровати</th>
+                        <th>Победы</th>
+                        <th>% побед</th>
+                        <th>Рейтинг</th>
+                        <th class="d-none d-lg-table-cell">Дата</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in players %}
+                        <tr class="player-row" data-player-id="{{ player.id }}" data-rank="{{ loop.index }}">
+                            <td>
+                                <div class="rank-display">
+                                    {% if loop.index == 1 %}
+                                        <div class="rank-medal first-place">
+                                            <i class="fas fa-crown"></i>
+                                            <span class="rank-text">1</span>
+                                        </div>
+                                    {% elif loop.index == 2 %}
+                                        <div class="rank-medal second-place">
+                                            <i class="fas fa-medal"></i>
+                                            <span class="rank-text">2</span>
+                                        </div>
+                                    {% elif loop.index == 3 %}
+                                        <div class="rank-medal third-place">
+                                            <i class="fas fa-medal"></i>
+                                            <span class="rank-text">3</span>
+                                        </div>
+                                    {% elif loop.index <= 10 %}
+                                        <div class="rank-badge top-ten">
+                                            <span class="rank-number">{{ loop.index }}</span>
+                                        </div>
+                                    {% else %}
+                                        <div class="rank-badge">
+                                            <span class="rank-number">{{ loop.index }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="player-info d-flex align-items-center">
+                                    <img src="{{ player.minecraft_skin_url }}" alt="{{ player.nickname }}" 
+                                         class="rounded me-2 player-skin" 
+                                         style="width: 32px; height: 32px; image-rendering: pixelated;">
+                                    <div>
+                                        <div class="player-name fw-bold">
+                                            {% if player.nickname_gradient %}
+                                            <span class="gradient-text" style="background: {{ player.nickname_gradient }}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 200% 200%; animation: titleGlow 3s linear infinite; font-weight: bold;">
+                                                {{ player.nickname }}
+                                            </span>
+                                            {% else %}
+                                            {{ player.nickname }}
+                                            {% endif %}
+                                        </div>
+                                        <div class="player-role text-muted small">
+                                            {% if player.role_gradient %}
+                                            <span style="background: {{ player.role_gradient }}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold;">
+                                                {{ player.role }}
+                                            </span>
+                                            {% else %}
+                                            {{ player.role }}
+                                            {% endif %}
+                                        </div>
+                                        {% if player.active_custom_title %}
+                                        <div class="player-custom-title small">
+                                            {% if player.title_gradient %}
+                                            <span class="gradient-text" style="background: {{ player.title_gradient }}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 200% 200%; animation: titleGlow 2.5s ease-in-out infinite alternate; font-weight: bold;">
+                                                {{ player.active_custom_title.display_name }}
+                                            </span>
+                                            {% else %}
+                                            <span style="color: {{ player.active_custom_title.color }}; font-weight: bold;">
+                                                {{ player.active_custom_title.display_name }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                {% if player.stats_gradient %}
+                                <span class="fw-bold" style="background: {{ player.stats_gradient }}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ player.level }}</span>
+                                {% else %}
+                                <span class="fw-bold {{ 'stat-value-gradient' if loop.index <= 3 else 'text-warning' }}">{{ player.level }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if player.stats_gradient %}
+                                <span class="fw-bold" style="background: {{ player.stats_gradient }}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ "{:,}".format(player.experience) }}</span>
+                                {% else %}
+                                <span class="fw-bold {{ 'stat-value-gradient' if loop.index <= 3 else 'text-info' }}">{{ "{:,}".format(player.experience) }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="stat-cell">
+                                {% if player.stats_gradient %}
+                                <span class="gradient-text" style="background: {{ player.stats_gradient }}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold;">
+                                    {{ player.kd_ratio }}
+                                </span>
+                                {% else %}
+                                <span class="stat-value {{ 'text-success' if player.kd_ratio >= 1.5 else 'text-warning' if player.kd_ratio >= 1.0 else 'text-danger' }}">
+                                    {{ player.kd_ratio }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="stat-cell">
+                                {% if player.stats_gradient %}
+                                <span class="gradient-text" style="background: {{ player.stats_gradient }}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold;">
+                                    {{ player.fkd_ratio }}
+                                </span>
+                                {% else %}
+                                <span class="stat-value {{ 'text-warning' if player.fkd_ratio >= 1.0 else 'text-muted' }}">
+                                    {{ player.fkd_ratio }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="stat-cell">
+                                {% if player.stats_gradient %}
+                                <span class="gradient-text" style="background: {{ player.stats_gradient }}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold;">
+                                    {{ player.beds_broken }}
+                                </span>
+                                {% else %}
+                                <span class="stat-value text-info">{{ player.beds_broken }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="stat-cell">
+                                {% if player.stats_gradient %}
+                                <span class="gradient-text" style="background: {{ player.stats_gradient }}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold;">
+                                    {{ player.wins }}
+                                </span>
+                                {% else %}
+                                <span class="stat-value text-success">{{ player.wins }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="stat-cell">
+                                {% if player.stats_gradient %}
+                                <span class="gradient-text" style="background: {{ player.stats_gradient }}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold;">
+                                    {{ player.win_rate }}%
+                                </span>
+                                {% else %}
+                                <span class="stat-value {{ 'text-success' if player.win_rate >= 70 else 'text-warning' if player.win_rate >= 50 else 'text-danger' }}">
+                                    {{ player.win_rate }}%
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="star-rating">
+                                    {% for i in range(1, 6) %}
+                                        <i class="fas fa-star {{ 'text-warning' if i <= player.star_rating else 'text-muted' }}"></i>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td class="d-none d-lg-table-cell text-muted small">
+                                {{ player.created_at.strftime('%d.%m.%Y') }}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('player_profile', player_id=player.id) }}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if is_admin %}
+                                        <button class="btn btn-outline-danger btn-sm" 
+                                                onclick="confirmDelete({{ player.id }}, '{{ player.nickname }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% else %}
+    <div class="empty-state text-center py-5">
+        <i class="fas fa-users text-muted display-1"></i>
+        <h3 class="mt-3 text-muted">
+            {% if search_query %}
+                Игроки не найдены
+            {% else %}
+                Таблица лидеров пуста
+            {% endif %}
+        </h3>
+        <p class="text-muted">
+            {% if search_query %}
+                Попробуйте изменить поисковый запрос
+            {% else %}
+                Добавьте первого игрока, чтобы начать
+            {% endif %}
+        </p>
+        {% if is_admin and not search_query %}
+            <a href="{{ url_for('admin') }}" class="btn btn-warning mt-3">
+                <i class="fas fa-plus me-2"></i>Добавить игрока
+            </a>
+        {% endif %}
+        {% if search_query %}
+            <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-list me-2"></i>Показать всех
+            </a>
+        {% endif %}
+    </div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+{% if is_admin %}
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить игрока <strong id="deletePlayerName"></strong>?</p>
+                <p class="text-muted small">Это действие нельзя отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function changeSorting() {
+    const select = document.getElementById('sortSelect');
+    const url = new URL(window.location);
+    url.searchParams.set('sort', select.value);
+    window.location.href = url.toString();
+}
+
+{% if is_admin %}
+function confirmDelete(playerId, playerName) {
+    document.getElementById('deletePlayerName').textContent = playerName;
+    document.getElementById('deleteForm').action = '{{ url_for("delete_player", player_id=0) }}'.replace('0', playerId);
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+{% endif %}
+
+// Add hover effects to table rows
+document.querySelectorAll('.player-row').forEach(row => {
+    row.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateX(5px)';
+        this.style.transition = 'transform 0.2s ease';
+    });
+
+    row.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateX(0)';
+    });
+});
+
+// Animate rank badges
+document.querySelectorAll('.rank-badge').forEach((badge, index) => {
+    setTimeout(() => {
+        badge.style.animation = 'bounceIn 0.6s ease';
+    }, index * 50);
+});
+</script>
+{% endblock %}

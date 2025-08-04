@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль {{ player.nickname }}{% endblock %}
+
+{% block content %}
+<div class="public-profile">
+    <!-- Profile Header -->
+    <div class="profile-banner mb-4 {{ 'animated-banner' if player.banner_is_animated and player.level >= 20 else '' }}" 
+         style="{% if player.custom_banner_url %}background-image: url('{{ player.custom_banner_url }}'); background-size: cover; background-position: center;{% else %}background: linear-gradient(135deg, {{ player.profile_banner_color }}, {{ player.profile_banner_color }}44);{% endif %} border-radius: 15px; position: relative; overflow: hidden; min-height: 200px;">
+        {% if not player.custom_banner_url %}
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><pattern id=\"hexagons\" width=\"20\" height=\"20\" patternUnits=\"userSpaceOnUse\"><polygon points=\"10,0 18,5 18,15 10,20 2,15 2,5\" fill=\"none\" stroke=\"rgba(255,255,255,0.1)\" stroke-width=\"0.5\"/></pattern></defs><rect width=\"100\" height=\"100\" fill=\"url(%23hexagons)\"/></svg>'); opacity: 0.3;"></div>
+        {% endif %}
+
+        <div class="container">
+            <div class="row align-items-end" style="position: relative; z-index: 1; padding: 2rem 0;">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ player.minecraft_skin_url }}" alt="{{ player.nickname }}" 
+                             class="rounded-circle me-4" 
+                             style="width: 120px; height: 120px; image-rendering: pixelated; border: 4px solid rgba(255,255,255,0.3); box-shadow: 0 0 20px rgba(0,0,0,0.3);">
+
+                        <div>
+                            <h1 class="text-white mb-2 fw-bold">
+                                {% if player.nickname_gradient %}
+                                <span style="background: {{ player.nickname_gradient }}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));">
+                                    {{ player.nickname }}
+                                </span>
+                                {% else %}
+                                {{ player.nickname }}
+                                {% endif %}
+                            </h1>
+
+                            {% if player.custom_status %}
+                            <p class="text-white-50 mb-2 fs-5">{{ player.custom_status }}</p>
+                            {% endif %}
+
+                            {% if player.active_custom_title %}
+                            <div class="custom-title mb-3 {% if player.title_gradient %}title-gradient-animated{% endif %}" 
+                                 style="{% if player.title_gradient %}background: {{ player.title_gradient }};{% else %}background: linear-gradient(45deg, {{ player.active_custom_title.color }}, {{ player.active_custom_title.glow_color }});{% endif %} -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold; font-size: 1.2rem; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));">
+                                {{ player.active_custom_title.display_name }}
+                            </div>
+                            {% elif player.role != 'Игрок' %}
+                            <div class="custom-title mb-3 {% if player.title_gradient %}title-gradient-animated{% endif %}" 
+                                 style="{% if player.title_gradient %}background: {{ player.title_gradient }};{% else %}background: linear-gradient(45deg, #ffd700, #ffaa00);{% endif %} -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: bold; font-size: 1.2rem; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));">
+                                {{ player.role }}
+                            </div>
+                            {% endif %}
+
+                            <div class="player-badges d-flex gap-2">
+                                <span class="badge bg-warning text-dark px-3 py-2">
+                                    <i class="fas fa-star me-1"></i>Уровень {{ player.level }}
+                                </span>
+                                <span class="badge bg-info text-dark px-3 py-2">
+                                    <i class="fas fa-calendar me-1"></i>{{ player.created_at.strftime('%d.%m.%Y') }}
+                                </span>
+                                {% if player.location %}
+                                <span class="badge bg-secondary px-3 py-2">
+                                    <i class="fas fa-map-marker-alt me-1"></i>{{ player.location }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 text-end">
+                    {% if is_owner %}
+                    <a href="{{ url_for('my_profile') }}" class="btn btn-outline-light">
+                        <i class="fas fa-edit me-2"></i>Редактировать профиль
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Main Stats -->
+            <div class="col-lg-8">
+                <!-- Bio Section -->
+                {% if player.bio %}
+                <div class="bio-section mb-4">
+                    <div class="card border-0" style="background: var(--bg-secondary);">
+                        <div class="card-header bg-transparent border-0">
+                            <h5 class="mb-0"><i class="fas fa-user me-2 text-info"></i>О игроке</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">{{ player.bio }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Detailed Statistics -->
+                <div class="detailed-stats mb-4">
+                    <div class="card border-0" style="background: var(--bg-secondary);">
+                        <div class="card-header bg-transparent border-0">
+                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2 text-success"></i>Подробная статистика</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <!-- Combat Stats -->
+                                <div class="col-md-4">
+                                    <div class="stat-group">
+                                        <h6 class="text-danger mb-3"><i class="fas fa-sword me-2"></i>Боевые</h6>
+                                        <div class="stat-item d-flex justify-content-between mb-2">
+                                            <span>Киллы:</span>
+                                            <span class="fw-bold text-success">{{ "{:,}".format(player.kills) }}</span>
+                                        </div>
+                                        <div class="stat-item d-flex justify-content-between mb-2">
+                                            <span>Финальные киллы:</span>
+                                            <span class="fw-bold text-warning">{{ "{:,}".format(player.final_kills) }}</span>
+                                        </div>
+                                        <div class="stat-item d-flex justify-content-between mb-2">
+                                            <span>Смерти:</span>
+                                            <span class="fw-bold text-danger">{{ "{:,}".format(player.deaths) }}</span>
+                                        </div>
+                                        <div class="stat-item d-flex justify-content-between">
+                                            <span>K/D Ratio:</span>
+                                            <span class="fw-bold text-info">{{ player.kd_ratio }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Game Stats -->
+                                <div class="col-md-4">
+                                    <div class="stat-group">
+                                        <h6 class="text-primary mb-3"><i class="fas fa-gamepad me-2"></i>Игровые</h6>
+                                        <div class="stat-item d-flex justify-content-between mb-2">
+                                            <span>Игры:</span>
+                                            <span class="fw-bold text-primary">{{ "{:,}".format(player.games_played) }}</span>
+                                        </div>
+                                        <div class="stat-item d-flex justify-content-between mb-2">
+                                            <span>Победы:</span>
+                                            <span class="fw-bold text-success">{{ "{:,}".format(player.wins) }}</span>
+                                        </div>
+                                        <div class="stat-item d-flex justify-content-between mb-2">
+                                            <span>Кровати:</span>
+                                            <span class="fw-bold text-info">{{ "{:,}".format(player.beds_broken) }}</span>
+                                        </div>
+                                        <div class="stat-item d-flex justify-content-between">
+                                            <span>% побед:</span>
+                                            <span class="fw-bold text-warning">{{ player.win_rate }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Resources -->
+                                <div class="col-md-4">
+                                    <div class="stat-group">
+                                        <h6 class="text-warning mb-3"><i class="fas fa-gem me-2"></i>Ресурсы</h6>
+                                        <div class="stat-item d-flex justify-content-between mb-2">
+                                            <span>Железо:</span>
+                                            <span class="fw-bold text-secondary">{{ "{:,}".format(player.iron_collected) }}</span>
+                                        </div>
+                                        <div class="stat-item d-flex justify-content-between mb-2">
+                                            <span>Золото:</span>
+                                            <span class="fw-bold text-warning">{{ "{:,}".format(player.gold_collected) }}</span>
+                                        </div>
+                                        <div class="stat-item d-flex justify-content-between mb-2">
+                                            <span>Алмазы:</span>
+                                            <span class="fw-bold text-info">{{ "{:,}".format(player.diamond_collected) }}</span>
+                                        </div>
+                                        <div class="stat-item d-flex justify-content-between">
+                                            <span>Изумруды:</span>
+                                            <span class="fw-bold text-success">{{ "{:,}".format(player.emerald_collected) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gaming Preferences -->
+                {% if player.favorite_server or player.favorite_map or player.preferred_gamemode %}
+                <div class="gaming-prefs mb-4">
+                    <div class="card border-0" style="background: var(--bg-secondary);">
+                        <div class="card-header bg-transparent border-0">
+                            <h5 class="mb-0"><i class="fas fa-gamepad me-2 text-purple"></i>Игровые предпочтения</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% if player.favorite_server %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="pref-item">
+                                        <i class="fas fa-server text-primary me-2"></i>
+                                        <strong>Любимый сервер:</strong><br>
+                                        <span class="text-muted">{{ player.favorite_server }}</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if player.favorite_map %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="pref-item">
+                                        <i class="fas fa-map text-success me-2"></i>
+                                        <strong>Любимая карта:</strong><br>
+                                        <span class="text-muted">{{ player.favorite_map }}</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if player.preferred_gamemode %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="pref-item">
+                                        <i class="fas fa-users text-warning me-2"></i>
+                                        <strong>Режим игры:</strong><br>
+                                        <span class="text-muted">{{ player.preferred_gamemode }}</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Social Links -->
+                {% if player.discord_tag or player.youtube_channel or player.twitch_channel %}
+                <div class="social-section mb-4">
+                    <div class="card border-0" style="background: var(--bg-secondary);">
+                        <div class="card-header bg-transparent border-0">
+                            <h5 class="mb-0"><i class="fas fa-share-alt me-2 text-info"></i>Социальные сети</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if player.discord_tag %}
+                            <div class="social-item d-flex align-items-center mb-3 p-3 rounded" style="background: var(--bg-primary);">
+                                <i class="fab fa-discord fa-2x text-info me-3"></i>
+                                <div>
+                                    <strong>Discord</strong><br>
+                                    <span class="text-muted">{{ player.discord_tag }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if player.youtube_channel %}
+                            <div class="social-item d-flex align-items-center mb-3 p-3 rounded" style="background: var(--bg-primary);">
+                                <i class="fab fa-youtube fa-2x text-danger me-3"></i>
+                                <div>
+                                    <strong>YouTube</strong><br>
+                                    <a href="{{ player.youtube_channel }}" target="_blank" class="text-decoration-none text-muted">Посетить канал</a>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if player.twitch_channel %}
+                            <div class="social-item d-flex align-items-center mb-3 p-3 rounded" style="background: var(--bg-primary);">
+                                <i class="fab fa-twitch fa-2x text-purple me-3"></i>
+                                <div>
+                                    <strong>Twitch</strong><br>
+                                    <a href="{{ player.twitch_channel }}" target="_blank" class="text-decoration-none text-muted">Посетить канал</a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Personal Info -->
+                <div class="personal-info mb-4">
+                    <div class="card border-0" style="background: var(--bg-secondary);">
+                        <div class="card-header bg-transparent border-0">
+                            <h5 class="mb-0"><i class="fas fa-info-circle me-2 text-secondary"></i>Информация</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if player.real_name %}
+                            <div class="info-item mb-3">
+                                <i class="fas fa-user text-primary me-2"></i>
+                                <strong>Имя:</strong> {{ player.real_name }}
+                            </div>
+                            {% endif %}
+                            {% if player.birthday %}
+                            <div class="info-item mb-3">
+                                <i class="fas fa-birthday-cake text-warning me-2"></i>
+                                <strong>День рождения:</strong> {{ player.birthday.strftime('%d.%m.%Y') }}
+                            </div>
+                            {% endif %}
+                            <div class="info-item mb-3">
+                                <i class="fas fa-calendar-plus text-success me-2"></i>
+                                <strong>Регистрация:</strong> {{ player.created_at.strftime('%d.%m.%Y') }}
+                            </div>
+                            <div class="info-item mb-3">
+                                <i class="fas fa-clock text-info me-2"></i>
+                                <strong>Последняя активность:</strong> {{ player.last_updated.strftime('%d.%m.%Y') }}
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-star text-warning me-2"></i>
+                                <strong>Рейтинг:</strong> 
+                                {% for i in range(1, 6) %}
+                                    <i class="fas fa-star {{ 'text-warning' if i <= player.star_rating else 'text-muted' }}"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="navigation-section">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Назад к лидерборду
+                        </a>
+                        <a href="{{ url_for('player_profile', player_id=player.id) }}" class="btn btn-outline-info">
+                            <i class="fas fa-chart-area me-2"></i>Подробная статистика
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Анимация появления элементов
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.animation = 'fadeInUp 0.6s ease forwards';
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 50);
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

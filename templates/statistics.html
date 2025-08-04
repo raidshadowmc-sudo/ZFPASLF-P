@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика - Minecraft Bedwars{% endblock %}
+
+{% block content %}
+<div class="statistics-page">
+    <!-- Header -->
+    <div class="stats-header text-center py-4 mb-5">
+        <h1 class="display-4 fw-bold text-warning mb-3">
+            <i class="fas fa-chart-bar me-3"></i>Статистика сервера
+        </h1>
+        <p class="lead text-muted">Детальная аналитика игроков Bedwars</p>
+    </div>
+
+    <!-- Overall Stats -->
+    {% if stats %}
+    <div class="overall-stats mb-5">
+        <h3 class="section-title mb-4">
+            <i class="fas fa-globe text-info me-2"></i>Общая статистика
+        </h3>
+        <div class="row g-4">
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="fas fa-users text-primary"></i>
+                    </div>
+                    <div class="stat-value">{{ stats.total_players }}</div>
+                    <div class="stat-label">Игроков</div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="fas fa-sword text-danger"></i>
+                    </div>
+                    <div class="stat-value">{{ "{:,}".format(stats.total_kills) }}</div>
+                    <div class="stat-label">Киллов</div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="fas fa-skull text-secondary"></i>
+                    </div>
+                    <div class="stat-value">{{ "{:,}".format(stats.total_deaths) }}</div>
+                    <div class="stat-label">Смертей</div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="fas fa-gamepad text-success"></i>
+                    </div>
+                    <div class="stat-value">{{ "{:,}".format(stats.total_games) }}</div>
+                    <div class="stat-label">Игр</div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="fas fa-trophy text-warning"></i>
+                    </div>
+                    <div class="stat-value">{{ "{:,}".format(stats.total_wins) }}</div>
+                    <div class="stat-label">Побед</div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="stat-box">
+                    <div class="stat-icon">
+                        <i class="fas fa-bed text-info"></i>
+                    </div>
+                    <div class="stat-value">{{ stats.total_beds_broken }}</div>
+                    <div class="stat-label">Кроватей</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Charts Section -->
+    <div class="charts-section mb-5">
+        <div class="row g-4">
+            <!-- Top Players by Experience -->
+            <div class="col-md-6">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h4 class="chart-title">
+                            <i class="fas fa-star text-warning me-2"></i>Топ по опыту
+                        </h4>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="experienceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Players by Kills -->
+            <div class="col-md-6">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h4 class="chart-title">
+                            <i class="fas fa-sword text-danger me-2"></i>Топ по киллам
+                        </h4>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="killsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Level Distribution -->
+            <div class="col-md-6">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h4 class="chart-title">
+                            <i class="fas fa-chart-pie text-success me-2"></i>Распределение уровней
+                        </h4>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="levelsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Comparison -->
+            <div class="col-md-6">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h4 class="chart-title">
+                            <i class="fas fa-chart-line text-info me-2"></i>Сравнение показателей
+                        </h4>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Lists -->
+    {% if top_players %}
+    <div class="top-lists-section">
+        <h3 class="section-title mb-4">
+            <i class="fas fa-medal text-warning me-2"></i>Топ игроки по категориям
+        </h3>
+        <div class="row g-4">
+            <!-- Top by Experience -->
+            <div class="col-md-4">
+                <div class="top-list-card">
+                    <div class="top-list-header">
+                        <h5><i class="fas fa-star text-warning me-2"></i>По опыту</h5>
+                    </div>
+                    <div class="top-list-body">
+                        {% for player in top_players.experience %}
+                        <div class="top-list-item">
+                            <div class="rank">{{ loop.index }}</div>
+                            <div class="player-info">
+                                <div class="player-name">{{ player.nickname }}</div>
+                                <div class="player-stat text-warning">{{ "{:,}".format(player.experience) }} XP</div>
+                            </div>
+                            <div class="level-badge">{{ player.level }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top by Kills -->
+            <div class="col-md-4">
+                <div class="top-list-card">
+                    <div class="top-list-header">
+                        <h5><i class="fas fa-sword text-danger me-2"></i>По киллам</h5>
+                    </div>
+                    <div class="top-list-body">
+                        {% for player in top_players.kills %}
+                        <div class="top-list-item">
+                            <div class="rank">{{ loop.index }}</div>
+                            <div class="player-info">
+                                <div class="player-name">{{ player.nickname }}</div>
+                                <div class="player-stat text-danger">{{ player.kills }} киллов</div>
+                            </div>
+                            <div class="kd-badge {{ 'bg-success' if player.kd_ratio >= 1.0 else 'bg-danger' }}">
+                                {{ player.kd_ratio }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top by Beds Broken -->
+            <div class="col-md-4">
+                <div class="top-list-card">
+                    <div class="top-list-header">
+                        <h5><i class="fas fa-bed text-info me-2"></i>По кроватям</h5>
+                    </div>
+                    <div class="top-list-body">
+                        {% for player in top_players.beds_broken %}
+                        <div class="top-list-item">
+                            <div class="rank">{{ loop.index }}</div>
+                            <div class="player-info">
+                                <div class="player-name">{{ player.nickname }}</div>
+                                <div class="player-stat text-info">{{ player.beds_broken }} кроватей</div>
+                            </div>
+                            <div class="win-rate-badge {{ 'bg-success' if player.win_rate >= 50 else 'bg-warning' if player.win_rate >= 30 else 'bg-danger' }}">
+                                {{ player.win_rate }}%
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Back to Leaderboard -->
+    <div class="text-center mt-5">
+        <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-arrow-left me-2"></i>Назад к таблице лидеров
+        </a>
+        {% if is_admin %}
+        <a href="{{ url_for('admin') }}" class="btn btn-warning btn-lg ms-2">
+            <i class="fas fa-cog me-2"></i>Панель администратора
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Load statistics data
+fetch('{{ url_for("api_stats") }}')
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.error('Error loading statistics:', data.error);
+            return;
+        }
+        
+        createCharts(data.charts);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+
+function createCharts(chartData) {
+    // Experience Chart
+    const expCtx = document.getElementById('experienceChart').getContext('2d');
+    new Chart(expCtx, {
+        type: 'bar',
+        data: {
+            labels: chartData.top_players_exp.labels,
+            datasets: [{
+                label: 'Опыт',
+                data: chartData.top_players_exp.data,
+                backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#fff' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#6c757d' },
+                    grid: { color: '#495057' }
+                },
+                x: {
+                    ticks: { color: '#6c757d' },
+                    grid: { color: '#495057' }
+                }
+            }
+        }
+    });
+
+    // Kills Chart
+    const killsCtx = document.getElementById('killsChart').getContext('2d');
+    new Chart(killsCtx, {
+        type: 'bar',
+        data: {
+            labels: chartData.top_players_kills.labels,
+            datasets: [{
+                label: 'Киллы',
+                data: chartData.top_players_kills.data,
+                backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                borderColor: 'rgba(220, 53, 69, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#fff' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#6c757d' },
+                    grid: { color: '#495057' }
+                },
+                x: {
+                    ticks: { color: '#6c757d' },
+                    grid: { color: '#495057' }
+                }
+            }
+        }
+    });
+
+    // Levels Distribution Chart
+    const levelsCtx = document.getElementById('levelsChart').getContext('2d');
+    const levelLabels = Object.keys(chartData.player_levels);
+    const levelData = Object.values(chartData.player_levels);
+    
+    new Chart(levelsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: levelLabels,
+            datasets: [{
+                data: levelData,
+                backgroundColor: [
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(23, 162, 184, 0.8)',
+                    'rgba(220, 53, 69, 0.8)',
+                    'rgba(108, 117, 125, 0.8)',
+                    'rgba(102, 16, 242, 0.8)'
+                ],
+                borderWidth: 2,
+                borderColor: '#343a40'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#fff' }
+                }
+            }
+        }
+    });
+
+    // Performance Comparison Chart
+    const perfCtx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(perfCtx, {
+        type: 'line',
+        data: {
+            labels: chartData.top_players_exp.labels.slice(0, 5),
+            datasets: [
+                {
+                    label: 'Опыт (÷100)',
+                    data: chartData.top_players_exp.data.slice(0, 5).map(x => x / 100),
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Киллы',
+                    data: chartData.top_players_kills.data.slice(0, 5),
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#fff' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#6c757d' },
+                    grid: { color: '#495057' }
+                },
+                x: {
+                    ticks: { color: '#6c757d' },
+                    grid: { color: '#495057' }
+                }
+            }
+        }
+    });
+}
+
+// Animate stat boxes
+document.querySelectorAll('.stat-box, .chart-card, .top-list-card').forEach((element, index) => {
+    setTimeout(() => {
+        element.style.animation = 'fadeInUp 0.6s ease';
+    }, index * 100);
+});
+</script>
+{% endblock %}

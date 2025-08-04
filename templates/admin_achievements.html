@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Управление достижениями - Bedwars Leaderboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .achievement-card {
+        background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+        border: 1px solid #444;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        transition: transform 0.3s ease;
+    }
+
+    .achievement-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .rarity-common { border-left: 4px solid #6c757d; }
+    .rarity-rare { border-left: 4px solid #0d6efd; }
+    .rarity-epic { border-left: 4px solid #6f42c1; }
+    .rarity-legendary { border-left: 4px solid #fd7e14; }
+
+    .achievement-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
+    .achievement-stats {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px 0;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="page-title">
+            <i class="fas fa-trophy text-warning me-2"></i>Управление достижениями
+        </h2>
+        <div class="btn-group">
+            <button class="btn btn-success" data-bs-target="#createAchievementModal" data-bs-toggle="modal">
+                <i class="fas fa-plus me-2"></i>Создать достижение
+            </button>
+            <button class="btn btn-info" onclick="generateSeasonalAchievements()">
+                <i class="fas fa-calendar me-2"></i>Сезонные достижения
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for achievement in achievements %}
+        <div class="col-lg-6 col-xl-4">
+            <div class="achievement-card rarity-{{ achievement.rarity }}">
+                <div class="text-center mb-3">
+                    <div class="achievement-icon text-{{ 'warning' if achievement.rarity == 'legendary' else 'info' if achievement.rarity == 'epic' else 'primary' if achievement.rarity == 'rare' else 'secondary' }}">
+                        <i class="{{ achievement.icon or 'fas fa-star' }}"></i>
+                    </div>
+                    <h5 class="text-warning">{{ achievement.title }}</h5>
+                    <span class="badge bg-{{ 'warning' if achievement.rarity == 'legendary' else 'info' if achievement.rarity == 'epic' else 'primary' if achievement.rarity == 'rare' else 'secondary' }}">
+                        {{ achievement.rarity.title() }}
+                    </span>
+                </div>
+
+                <p class="text-muted">{{ achievement.description }}</p>
+
+                <div class="achievement-stats">
+                    <div class="stat-item">
+                        <span>Получили:</span>
+                        <span class="text-success">{{ achievement.earned_count or 0 }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Награда (XP):</span>
+                        <span class="text-warning">{{ achievement.reward_xp }}</span>
+                    </div>
+                    {% if achievement.reward_title %}
+                    <div class="stat-item">
+                        <span>Титул:</span>
+                        <span class="text-info">{{ achievement.reward_title }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-2 mt-3">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editAchievement({{ achievement.id }})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteAchievement({{ achievement.id }})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    {% if achievement.is_hidden %}
+                    <button class="btn btn-sm btn-outline-warning" onclick="toggleVisibility({{ achievement.id }})">
+                        <i class="fas fa-eye-slash"></i>
+                    </button>
+                    {% else %}
+                    <button class="btn btn-sm btn-outline-success" onclick="toggleVisibility({{ achievement.id }})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Create Achievement Modal -->
+<div class="modal fade" id="createAchievementModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-warning">Создать новое достижение</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('create_achievement') }}">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Название достижения</label>
+                            <input type="text" class="form-control" name="title" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Описание</label>
+                            <textarea class="form-control" name="description" rows="3" required></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Тип условия</label>
+                            <select class="form-select" name="condition_type" required>
+                                <option value="kills">Убийства</option>
+                                <option value="final_kills">Финальные убийства</option>
+                                <option value="beds_broken">Сломанные кровати</option>
+                                <option value="wins">Победы</option>
+                                <option value="games_played">Игры сыграны</option>
+                                <option value="experience">Опыт</option>
+                                <option value="level">Уровень</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Редкость</label>
+                            <select class="form-select" name="rarity" required>
+                                <option value="common">Обычное</option>
+                                <option value="rare">Редкое</option>
+                                <option value="epic">Эпическое</option>
+                                <option value="legendary">Легендарное</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Целевое значение</label>
+                            <input type="number" class="form-control" name="condition_value" min="1" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Награда (опыт)</label>
+                            <input type="number" class="form-control" name="reward_experience" min="0" value="250">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Иконка (FontAwesome)</label>
+                            <input type="text" class="form-control" name="icon" placeholder="fas fa-star">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Титул за достижение</label>
+                            <input type="text" class="form-control" name="reward_title" placeholder="Например: Легенда PvP">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_hidden">
+                                <label class="form-check-label">Скрытое достижение</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success">Создать достижение</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function generateSeasonalAchievements() {
+    if (confirm('Создать сезонные достижения? Это добавит набор специальных достижений.')) {
+        fetch('/admin/generate_achievements', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({type: 'seasonal'})
+        }).then(() => location.reload());
+    }
+}
+
+function editAchievement(achievementId) {
+    alert('Редактирование достижения ID: ' + achievementId);
+}
+
+function deleteAchievement(achievementId) {
+    if (confirm('Удалить это достижение? Это действие нельзя отменить.')) {
+        fetch('/admin/delete_achievement/' + achievementId, {method: 'DELETE'})
+            .then(() => location.reload());
+    }
+}
+
+function toggleVisibility(achievementId) {
+    fetch('/admin/toggle_achievement/' + achievementId, {method: 'POST'})
+        .then(() => location.reload());
+}
+</script>
+{% endblock %}

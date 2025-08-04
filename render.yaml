@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: bedwars-leaderboard
+    env: python
+    buildCommand: pip install -r pyproject.toml
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 main:app
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bedwars-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        value: admin
+
+databases:
+  - name: bedwars-db
+    databaseName: bedwars_leaderboard
+    user: bedwars_user
