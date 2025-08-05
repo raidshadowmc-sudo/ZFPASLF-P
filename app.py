@@ -40,7 +40,6 @@ with app.app_context():
     import routes
     
     # Drop all tables and recreate them to fix schema issues
-    db.drop_all()
     db.create_all()
     
     # Initialize default data
